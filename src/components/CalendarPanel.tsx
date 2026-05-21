@@ -25,7 +25,7 @@ export default function CalendarPanel({
 }: {
   currentDate: string;
   setCurrentDate: (s: string) => void;
-  setTab: (t: string) => void;
+  setTab: (t: 'today' | 'calendar' | 'weekly' | 'tests' | 'topics' | 'errors' | 'progress' | 'export') => void;
 }) {
   const [cursor, setCursor] = useState(() => startOfMonth(parseISO(currentDate)));
   const [aggs, setAggs] = useState<Record<string, DayAgg>>({});
