@@ -128,18 +128,9 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted font-mono">
                       <span className="border border-ink/20 px-2 py-0.5 uppercase">{t.task_type}</span>
-                      <span>{t.minutes} min planned</span>
+                      <span>{t.minutes} min</span>
                       {t.done && (
-                        <input
-                          type="number"
-                          placeholder={`actual: ${t.actual_minutes ?? t.minutes}`}
-                          defaultValue={t.actual_minutes ?? undefined}
-                          onBlur={e => {
-                            const v = parseInt(e.target.value);
-                            if (!isNaN(v)) updateActualMin(t, v);
-                          }}
-                          className="w-20 bg-transparent border border-ink/20 px-2 py-0.5 text-xs"
-                        />
+                        <ActualTimeField task={t} onSave={(mins) => updateActualMin(t, mins)} />
                       )}
                     </div>
                   </div>
@@ -195,6 +186,45 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
         <QuickErrorLog currentDate={currentDate} weekLabel={tasks[0]?.week_label} />
       </aside>
     </div>
+  );
+}
+
+function ActualTimeField({ task, onSave }: { task: Task; onSave: (mins: number) => void }) {
+  const [open, setOpen] = useState(false);
+  if (task.actual_minutes) {
+    return (
+      <span
+        className="text-accent cursor-pointer hover:underline"
+        onClick={() => setOpen(o => !o)}
+      >
+        {open ? (
+          <input
+            type="number"
+            autoFocus
+            defaultValue={task.actual_minutes}
+            onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v)) { onSave(v); setOpen(false); } }}
+            className="w-14 bg-transparent border-b border-accent text-xs outline-none"
+          />
+        ) : `${task.actual_minutes} min actual`}
+      </span>
+    );
+  }
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="opacity-40 hover:opacity-80 transition-opacity">
+        came in under?
+      </button>
+    );
+  }
+  return (
+    <input
+      type="number"
+      autoFocus
+      placeholder="actual min"
+      onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v)) onSave(v); setOpen(false); }}
+      onKeyDown={e => { if (e.key === 'Escape') setOpen(false); }}
+      className="w-20 bg-transparent border border-ink/20 px-2 py-0.5 text-xs outline-none"
+    />
   );
 }
 
