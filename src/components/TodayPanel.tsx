@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, type Task } from '@/lib/supabase';
-import { addDays, format, parseISO } from 'date-fns';
+import { addDays, format, parseISO, subDays } from 'date-fns';
 
-export default function TodayPanel({ currentDate }: { currentDate: string }) {
+export default function TodayPanel({ currentDate, setCurrentDate }: { currentDate: string; setCurrentDate: (d: string) => void }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [rescheduling, setRescheduling] = useState(false);
@@ -99,14 +99,26 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
       <div>
-        <div className="mb-6 flex items-baseline justify-between border-b border-ink/15 pb-4">
-          <div>
-            <div className="text-xs uppercase tracking-widest text-muted font-mono">
-              {tasks[0]?.week_label ?? ''} · {tasks[0]?.day_label ?? ''}
+        <div className="mb-6 flex items-baseline justify-between border-b border-ink/15 pb-4 gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button
+              onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}
+              className="border border-ink/20 w-10 h-10 flex items-center justify-center text-lg hover:bg-ink hover:text-paper transition-colors flex-shrink-0"
+              aria-label="Previous day"
+            >‹</button>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs uppercase tracking-widest text-muted font-mono">
+                {tasks[0]?.week_label ?? ''} · {tasks[0]?.day_label ?? ''}
+              </div>
+              <h2 className="font-display text-4xl font-extrabold mt-1 truncate">
+                {format(parseISO(currentDate), 'EEE, MMM d')}
+              </h2>
             </div>
-            <h2 className="font-display text-4xl font-extrabold mt-1">
-              {format(parseISO(currentDate), 'EEEE, MMMM d')}
-            </h2>
+            <button
+              onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}
+              className="border border-ink/20 w-10 h-10 flex items-center justify-center text-lg hover:bg-ink hover:text-paper transition-colors flex-shrink-0"
+              aria-label="Next day"
+            >›</button>
           </div>
           <div className="text-right">
             <div className="tag-num text-5xl font-bold">{pct}<span className="text-2xl text-muted">%</span></div>

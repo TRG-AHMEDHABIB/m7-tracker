@@ -49,7 +49,7 @@ export default function Home() {
       <Header today={today} setToday={setToday} daysOut={daysOut} tab={tab} setTab={setTab} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {tab === 'today' && <TodayPanel currentDate={today} />}
+        {tab === 'today' && <TodayPanel currentDate={today} setCurrentDate={setToday} />}
         {tab === 'calendar' && <CalendarPanel currentDate={today} setCurrentDate={setToday} setTab={setTab} />}
         {tab === 'weekly' && <WeeklyGoalsPanel />}
         {tab === 'tests' && <TestsPanel />}
