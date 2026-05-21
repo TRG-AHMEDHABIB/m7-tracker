@@ -89,7 +89,7 @@ export default function ExportPanel() {
     setBusy(null);
     if (err || !data) { setError(err?.message ?? 'Unknown error'); return; }
     const date = new Date().toISOString().slice(0, 10);
-    download(`gre-${t.table}-${date}.csv`, toCSV(data as Record<string, unknown>[]));
+    download(`m7-${t.table}-${date}.csv`, toCSV(data as Record<string, unknown>[]));
     setDone(t.id);
     setTimeout(() => setDone(null), 2500);
   }
@@ -105,7 +105,7 @@ export default function ExportPanel() {
       const { data, error: err } = await query;
       if (err || !data) { setError(`${t.table}: ${err?.message}`); setBusy(null); return; }
       const date = new Date().toISOString().slice(0, 10);
-      download(`gre-${t.table}-${date}.csv`, toCSV(data as Record<string, unknown>[]));
+      download(`m7-${t.table}-${date}.csv`, toCSV(data as Record<string, unknown>[]));
       // slight delay so browser doesn't block multiple downloads
       await new Promise(r => setTimeout(r, 300));
     }

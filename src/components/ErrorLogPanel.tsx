@@ -230,7 +230,7 @@ function FullErrorForm({ onSaved }: { onSaved: () => void }) {
           </select>
         </Field>
         <Field label="Source">
-          <input value={form.source} onChange={e => setForm({...form, source: e.target.value})} placeholder="Manhattan 5lb / Gregmat / ETS PP1…" className="w-full border border-ink/20 px-2 py-1.5 bg-paper"/>
+          <input value={form.source} onChange={e => setForm({...form, source: e.target.value})} placeholder="Manhattan 5lb / Prepswift / Official Guide…" className="w-full border border-ink/20 px-2 py-1.5 bg-paper"/>
         </Field>
         <Field label="Source ref">
           <input value={form.source_ref} onChange={e => setForm({...form, source_ref: e.target.value})} placeholder="Ch.3 Q47" className="w-full border border-ink/20 px-2 py-1.5 bg-paper"/>

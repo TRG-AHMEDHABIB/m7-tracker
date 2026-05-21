@@ -50,7 +50,7 @@ export default function Home() {
       </div>
 
       <footer className="max-w-7xl mx-auto px-6 py-12 border-t border-ink/10 mt-12 text-xs text-muted font-mono">
-        Operation M7 · GRE Aug 22, 2026 · Target 328 · Baseline 296
+        M7 Tracker · Aug 22, 2026 · Target 328 · Baseline 296
       </footer>
     </main>
   );
