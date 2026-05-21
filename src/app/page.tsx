@@ -5,7 +5,7 @@ import { format, differenceInDays } from 'date-fns';
 import TodayPanel from '@/components/TodayPanel';
 import ErrorLogPanel from '@/components/ErrorLogPanel';
 import ProgressPanel from '@/components/ProgressPanel';
-import PlanPanel from '@/components/PlanPanel';
+import ExportPanel from '@/components/ExportPanel';
 import CalendarPanel from '@/components/CalendarPanel';
 import TestsPanel from '@/components/TestsPanel';
 import TopicsPanel from '@/components/TopicsPanel';
@@ -13,7 +13,7 @@ import WeeklyGoalsPanel from '@/components/WeeklyGoalsPanel';
 
 const TEST_DATE = new Date('2026-08-22');
 
-type Tab = 'today' | 'calendar' | 'weekly' | 'tests' | 'topics' | 'errors' | 'progress' | 'plan';
+type Tab = 'today' | 'calendar' | 'weekly' | 'tests' | 'topics' | 'errors' | 'progress' | 'export';
 
 const TAB_LABEL: Record<Tab, string> = {
   today: 'Today',
@@ -23,10 +23,10 @@ const TAB_LABEL: Record<Tab, string> = {
   topics: 'Topics',
   errors: 'Error Log',
   progress: 'Progress',
-  plan: 'Plan I/O',
+  export: 'Export',
 };
 
-const TABS: Tab[] = ['today','calendar','weekly','tests','topics','errors','progress','plan'];
+const TABS: Tab[] = ['today','calendar','weekly','tests','topics','errors','progress','export'];
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>('today');
@@ -46,7 +46,7 @@ export default function Home() {
         {tab === 'topics' && <TopicsPanel />}
         {tab === 'errors' && <ErrorLogPanel />}
         {tab === 'progress' && <ProgressPanel />}
-        {tab === 'plan' && <PlanPanel />}
+        {tab === 'export' && <ExportPanel />}
       </div>
 
       <footer className="max-w-7xl mx-auto px-6 py-12 border-t border-ink/10 mt-12 text-xs text-muted font-mono">
