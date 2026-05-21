@@ -39,7 +39,11 @@ export default function WeeklyGoalsPanel() {
       supabase.from('v_weekly_progress').select('week_label, hours_done'),
       supabase.from('tasks').select('week_label, done'),
     ]);
-    if (g.data) setGoals(g.data as WeeklyGoal[]);
+    if (g.data) setGoals(
+      (g.data as WeeklyGoal[]).sort((a, b) =>
+        parseInt(a.week_label.replace('W', '')) - parseInt(b.week_label.replace('W', ''))
+      )
+    );
     const map: Record<string, WeeklyProgress> = {};
     if (p.data) for (const r of p.data as WeeklyProgress[]) map[r.week_label] = { ...r };
     if (t.data) {
