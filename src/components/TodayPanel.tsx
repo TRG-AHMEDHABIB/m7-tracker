@@ -2,22 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, type Task } from '@/lib/supabase';
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO, subDays } from 'date-fns';
 
-export default function TodayPanel({ currentDate }: { currentDate: string }) {
+export default function TodayPanel({ currentDate, setCurrentDate }: { currentDate: string; setCurrentDate: (d: string) => void }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleResult, setRescheduleResult] = useState<string | null>(null);
+  const [movedAwayCount, setMovedAwayCount] = useState(0);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('task_date', currentDate)
-      .order('sort_order');
-    if (!error && data) setTasks(data as Task[]);
+    const [taskRes, movedRes] = await Promise.all([
+      supabase.from('tasks').select('*').eq('task_date', currentDate).order('sort_order'),
+      supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('original_date', currentDate).eq('done', false),
+    ]);
+    if (!taskRes.error && taskRes.data) setTasks(taskRes.data as Task[]);
+    setMovedAwayCount(movedRes.count ?? 0);
     setLoading(false);
   }
 
@@ -37,6 +38,16 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
     load();
   }
 
+  async function moveTask(t: Task, days: number) {
+    const newDate = format(addDays(parseISO(t.task_date), days), 'yyyy-MM-dd');
+    await supabase.from('tasks').update({
+      task_date: newDate,
+      original_date: t.original_date ?? t.task_date,
+      rescheduled_count: t.rescheduled_count + 1,
+    }).eq('id', t.id);
+    load();
+  }
+
   async function rescheduleMissed() {
     setRescheduling(true);
     const { data, error } = await supabase.rpc('smart_reschedule', { missed_date: currentDate });
@@ -46,6 +57,19 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
     } else {
       const count = data?.length ?? 0;
       setRescheduleResult(`${count} task${count === 1 ? '' : 's'} redistributed within phase.`);
+    }
+    setTimeout(() => setRescheduleResult(null), 5000);
+    load();
+  }
+
+  async function undoReschedule() {
+    setRescheduling(true);
+    const { data, error } = await supabase.rpc('undo_reschedule', { restore_date: currentDate });
+    setRescheduling(false);
+    if (error) {
+      setRescheduleResult('Error: ' + error.message);
+    } else {
+      setRescheduleResult(`${data} task${data === 1 ? '' : 's'} restored to ${currentDate}.`);
     }
     setTimeout(() => setRescheduleResult(null), 5000);
     load();
@@ -68,21 +92,33 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
   }
 
   const totalMin = tasks.reduce((s, t) => s + t.minutes, 0);
-  const doneMin = tasks.filter(t => t.done).reduce((s, t) => s + t.minutes, 0);
+  const doneMin = tasks.filter(t => t.done).reduce((s, t) => s + (t.actual_minutes ?? t.minutes), 0);
   const pct = totalMin ? Math.round((doneMin / totalMin) * 100) : 0;
   const undoneCount = tasks.filter(t => !t.done).length;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
       <div>
-        <div className="mb-6 flex items-baseline justify-between border-b border-ink/15 pb-4">
-          <div>
-            <div className="text-xs uppercase tracking-widest text-muted font-mono">
-              {tasks[0]?.week_label ?? ''} · {tasks[0]?.day_label ?? ''}
+        <div className="mb-6 flex items-baseline justify-between border-b border-ink/15 pb-4 gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button
+              onClick={() => setCurrentDate(format(subDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}
+              className="border border-ink/20 w-10 h-10 flex items-center justify-center text-lg hover:bg-ink hover:text-paper transition-colors flex-shrink-0"
+              aria-label="Previous day"
+            >‹</button>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs uppercase tracking-widest text-muted font-mono">
+                {tasks[0]?.week_label ?? ''} · {tasks[0]?.day_label ?? ''}
+              </div>
+              <h2 className="font-display text-4xl font-extrabold mt-1 truncate">
+                {format(parseISO(currentDate), 'EEE, MMM d')}
+              </h2>
             </div>
-            <h2 className="font-display text-4xl font-extrabold mt-1">
-              {format(parseISO(currentDate), 'EEEE, MMMM d')}
-            </h2>
+            <button
+              onClick={() => setCurrentDate(format(addDays(parseISO(currentDate), 1), 'yyyy-MM-dd'))}
+              className="border border-ink/20 w-10 h-10 flex items-center justify-center text-lg hover:bg-ink hover:text-paper transition-colors flex-shrink-0"
+              aria-label="Next day"
+            >›</button>
           </div>
           <div className="text-right">
             <div className="tag-num text-5xl font-bold">{pct}<span className="text-2xl text-muted">%</span></div>
@@ -126,21 +162,12 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted font-mono">
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted font-mono flex-wrap">
                       <span className="border border-ink/20 px-2 py-0.5 uppercase">{t.task_type}</span>
                       <span>{t.minutes} min planned</span>
-                      {t.done && (
-                        <input
-                          type="number"
-                          placeholder={`actual: ${t.actual_minutes ?? t.minutes}`}
-                          defaultValue={t.actual_minutes ?? undefined}
-                          onBlur={e => {
-                            const v = parseInt(e.target.value);
-                            if (!isNaN(v)) updateActualMin(t, v);
-                          }}
-                          className="w-20 bg-transparent border border-ink/20 px-2 py-0.5 text-xs"
-                        />
-                      )}
+                      <ActualTimeField task={t} onSave={(mins) => updateActualMin(t, mins)} />
+
+                      {!t.done && <MoveTaskButton onMove={(days) => moveTask(t, days)} />}
                     </div>
                   </div>
                 </div>
@@ -163,6 +190,13 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
             className="w-full bg-ink text-paper px-4 py-3 text-sm uppercase tracking-widest font-medium disabled:opacity-30"
           >
             {rescheduling ? 'Redistributing…' : `Redistribute ${undoneCount} undone task${undoneCount === 1 ? '' : 's'}`}
+          </button>
+          <button
+            onClick={undoReschedule}
+            disabled={rescheduling || movedAwayCount === 0}
+            className="mt-2 w-full border border-ink/20 px-4 py-2 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-ink transition-colors"
+          >
+            {rescheduling ? 'Restoring…' : movedAwayCount > 0 ? `↩ Restore ${movedAwayCount} task${movedAwayCount === 1 ? '' : 's'} moved from today` : '↩ Nothing moved from today'}
           </button>
           {rescheduleResult && (
             <div className="mt-3 text-xs font-mono text-accent">{rescheduleResult}</div>
@@ -195,6 +229,74 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
         <QuickErrorLog currentDate={currentDate} weekLabel={tasks[0]?.week_label} />
       </aside>
     </div>
+  );
+}
+
+function MoveTaskButton({ onMove }: { onMove: (days: number) => void }) {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="opacity-40 hover:opacity-80 transition-opacity"
+      >
+        → move
+      </button>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <span className="opacity-60">move fwd:</span>
+      {[1, 2, 3, 7].map(d => (
+        <button
+          key={d}
+          onClick={() => { onMove(d); setOpen(false); }}
+          className="border border-ink/30 px-1.5 py-0.5 hover:bg-ink hover:text-paper transition-colors"
+        >
+          +{d}d
+        </button>
+      ))}
+      <button onClick={() => setOpen(false)} className="opacity-40 hover:opacity-80 ml-1">✕</button>
+    </span>
+  );
+}
+
+function ActualTimeField({ task, onSave }: { task: Task; onSave: (mins: number) => void }) {
+  const [open, setOpen] = useState(false);
+  if (task.actual_minutes) {
+    return (
+      <span
+        className="text-accent cursor-pointer hover:underline"
+        onClick={() => setOpen(o => !o)}
+      >
+        {open ? (
+          <input
+            type="number"
+            autoFocus
+            defaultValue={task.actual_minutes}
+            onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v)) { onSave(v); setOpen(false); } }}
+            className="w-14 bg-transparent border-b border-accent text-xs outline-none"
+          />
+        ) : `${task.actual_minutes} min actual`}
+      </span>
+    );
+  }
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="opacity-40 hover:opacity-80 transition-opacity">
+        came in under?
+      </button>
+    );
+  }
+  return (
+    <input
+      type="number"
+      autoFocus
+      placeholder="actual min"
+      onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v)) onSave(v); setOpen(false); }}
+      onKeyDown={e => { if (e.key === 'Escape') setOpen(false); }}
+      className="w-20 bg-transparent border border-ink/20 px-2 py-0.5 text-xs outline-none"
+    />
   );
 }
 
