@@ -21,9 +21,11 @@ const PLAN_END = parseISO('2026-08-22');
 export default function CalendarPanel({
   currentDate,
   setCurrentDate,
+  setTab,
 }: {
   currentDate: string;
   setCurrentDate: (s: string) => void;
+  setTab: (t: string) => void;
 }) {
   const [cursor, setCursor] = useState(() => startOfMonth(parseISO(currentDate)));
   const [aggs, setAggs] = useState<Record<string, DayAgg>>({});
@@ -235,7 +237,7 @@ export default function CalendarPanel({
               ))}
             </ul>
             <button
-              onClick={() => setCurrentDate(selected)}
+              onClick={() => { setCurrentDate(selected); setTab('today'); }}
               className="mt-5 w-full border-2 border-ink px-3 py-2 text-xs uppercase tracking-widest font-medium hover:bg-ink hover:text-paper transition-colors"
             >
               Open in Today tab →

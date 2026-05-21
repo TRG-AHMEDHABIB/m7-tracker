@@ -9,15 +9,16 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
   const [loading, setLoading] = useState(true);
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleResult, setRescheduleResult] = useState<string | null>(null);
+  const [movedAwayCount, setMovedAwayCount] = useState(0);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('task_date', currentDate)
-      .order('sort_order');
-    if (!error && data) setTasks(data as Task[]);
+    const [taskRes, movedRes] = await Promise.all([
+      supabase.from('tasks').select('*').eq('task_date', currentDate).order('sort_order'),
+      supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('original_date', currentDate).eq('done', false),
+    ]);
+    if (!taskRes.error && taskRes.data) setTasks(taskRes.data as Task[]);
+    setMovedAwayCount(movedRes.count ?? 0);
     setLoading(false);
   }
 
@@ -46,6 +47,19 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
     } else {
       const count = data?.length ?? 0;
       setRescheduleResult(`${count} task${count === 1 ? '' : 's'} redistributed within phase.`);
+    }
+    setTimeout(() => setRescheduleResult(null), 5000);
+    load();
+  }
+
+  async function undoReschedule() {
+    setRescheduling(true);
+    const { data, error } = await supabase.rpc('undo_reschedule', { restore_date: currentDate });
+    setRescheduling(false);
+    if (error) {
+      setRescheduleResult('Error: ' + error.message);
+    } else {
+      setRescheduleResult(`${data} task${data === 1 ? '' : 's'} restored to ${currentDate}.`);
     }
     setTimeout(() => setRescheduleResult(null), 5000);
     load();
@@ -155,6 +169,15 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
           >
             {rescheduling ? 'Redistributing…' : `Redistribute ${undoneCount} undone task${undoneCount === 1 ? '' : 's'}`}
           </button>
+          {movedAwayCount > 0 && (
+            <button
+              onClick={undoReschedule}
+              disabled={rescheduling}
+              className="mt-2 w-full border border-ink/30 text-muted px-4 py-2 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-ink hover:text-ink transition-colors"
+            >
+              {rescheduling ? 'Restoring…' : `↩ Restore ${movedAwayCount} task${movedAwayCount === 1 ? '' : 's'} moved from today`}
+            </button>
+          )}
           {rescheduleResult && (
             <div className="mt-3 text-xs font-mono text-accent">{rescheduleResult}</div>
           )}
