@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0a0a0b;
+  --paper: #f5f1e8;
+  --accent: #d64545;
+  --muted: #6b6661;
+  --line: #1f1d1a;
+}
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Editorial number tags */
+.tag-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum';
+  letter-spacing: -0.02em;
+}
+
+/* Grid paper background */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(10,10,11,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10,10,11,0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Phase swatches */
+.phase-Foundation { background: #2c3e50; color: #f5f1e8; }
+.phase-Strategy   { background: #8b4513; color: #f5f1e8; }
+.phase-Practice   { background: #d64545; color: #f5f1e8; }
+.phase-Execution  { background: #0a0a0b; color: #f5f1e8; }
+.phase-TestWeek   { background: #d64545; color: #f5f1e8; border: 2px solid #0a0a0b; }
