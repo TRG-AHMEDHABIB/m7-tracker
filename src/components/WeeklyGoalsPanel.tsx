@@ -75,8 +75,8 @@ export default function WeeklyGoalsPanel() {
   const totals = useMemo(() => {
     let hoursTgt = 0, hoursDone = 0;
     for (const g of goals) {
-      hoursTgt += g.hours_target ?? 0;
-      hoursDone += progress[g.week_label]?.hours_done ?? 0;
+      hoursTgt += Number(g.hours_target ?? 0);
+      hoursDone += Number(progress[g.week_label]?.hours_done ?? 0);
     }
     return { hoursTgt, hoursDone };
   }, [goals, progress]);
@@ -97,8 +97,8 @@ export default function WeeklyGoalsPanel() {
         <ul className="space-y-3">
           {goals.map(g => {
             const prog = progress[g.week_label];
-            const hoursDone = prog?.hours_done ?? 0;
-            const hoursTgt = g.hours_target ?? 0;
+            const hoursDone = Number(prog?.hours_done ?? 0);
+            const hoursTgt = Number(g.hours_target ?? 0);
             const delta = hoursDone - hoursTgt;
             const pct = hoursTgt > 0 ? Math.min(100, (hoursDone / hoursTgt) * 100) : 0;
             const text = draft[g.week_label] ?? g.reflection ?? '';
