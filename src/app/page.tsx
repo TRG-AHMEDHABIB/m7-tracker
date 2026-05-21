@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { format, differenceInDays } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { addDays, format, differenceInDays, parseISO, subDays } from 'date-fns';
 import TodayPanel from '@/components/TodayPanel';
 import ErrorLogPanel from '@/components/ErrorLogPanel';
 import ProgressPanel from '@/components/ProgressPanel';
@@ -33,6 +33,16 @@ export default function Home() {
   const [today, setToday] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   const daysOut = differenceInDays(TEST_DATE, new Date());
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'ArrowLeft') setToday(format(subDays(parseISO(today), 1), 'yyyy-MM-dd'));
+      if (e.key === 'ArrowRight') setToday(format(addDays(parseISO(today), 1), 'yyyy-MM-dd'));
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [today]);
 
   return (
     <main className="min-h-screen bg-paper text-ink bg-grid">
