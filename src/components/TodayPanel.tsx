@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase, type Task } from '@/lib/supabase';
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 
 export default function TodayPanel({ currentDate }: { currentDate: string }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -35,6 +35,16 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
 
   async function updateActualMin(t: Task, mins: number) {
     await supabase.from('tasks').update({ actual_minutes: mins }).eq('id', t.id);
+    load();
+  }
+
+  async function moveTask(t: Task, days: number) {
+    const newDate = format(addDays(parseISO(t.task_date), days), 'yyyy-MM-dd');
+    await supabase.from('tasks').update({
+      task_date: newDate,
+      original_date: t.original_date ?? t.task_date,
+      rescheduled_count: t.rescheduled_count + 1,
+    }).eq('id', t.id);
     load();
   }
 
@@ -140,12 +150,13 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted font-mono">
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted font-mono flex-wrap">
                       <span className="border border-ink/20 px-2 py-0.5 uppercase">{t.task_type}</span>
                       <span>{t.minutes} min</span>
                       {t.done && (
                         <ActualTimeField task={t} onSave={(mins) => updateActualMin(t, mins)} />
                       )}
+                      {!t.done && <MoveTaskButton onMove={(days) => moveTask(t, days)} />}
                     </div>
                   </div>
                 </div>
@@ -207,6 +218,35 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
         <QuickErrorLog currentDate={currentDate} weekLabel={tasks[0]?.week_label} />
       </aside>
     </div>
+  );
+}
+
+function MoveTaskButton({ onMove }: { onMove: (days: number) => void }) {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="opacity-40 hover:opacity-80 transition-opacity"
+      >
+        → move
+      </button>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <span className="opacity-60">move fwd:</span>
+      {[1, 2, 3, 7].map(d => (
+        <button
+          key={d}
+          onClick={() => { onMove(d); setOpen(false); }}
+          className="border border-ink/30 px-1.5 py-0.5 hover:bg-ink hover:text-paper transition-colors"
+        >
+          +{d}d
+        </button>
+      ))}
+      <button onClick={() => setOpen(false)} className="opacity-40 hover:opacity-80 ml-1">✕</button>
+    </span>
   );
 }
 
