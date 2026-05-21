@@ -24,12 +24,13 @@ export default function ProgressPanel() {
         supabase.from('v_errors_by_type').select('*'),
         supabase.from('v_errors_by_week').select('*'),
         supabase.from('v_weekly_progress').select('*'),
-        supabase.from('practice_tests').select('*').order('id'),
+        supabase.from('practice_tests').select('*').order('test_label'),
       ]);
+      const weekNum = (label: string) => parseInt(String(label).replace(/\D/g, ''), 10) || 0;
       setBySource(src.data ?? []);
       setByType(typ.data ?? []);
-      setByWeek(wk.data ?? []);
-      setWeekly(wprog.data ?? []);
+      setByWeek((wk.data ?? []).sort((a: any, b: any) => weekNum(a.week_label) - weekNum(b.week_label)));
+      setWeekly((wprog.data ?? []).sort((a: any, b: any) => weekNum(a.week_label) - weekNum(b.week_label)));
       setTests(ptests.data ?? []);
     })();
   }, []);
