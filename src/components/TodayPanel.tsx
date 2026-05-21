@@ -169,15 +169,13 @@ export default function TodayPanel({ currentDate }: { currentDate: string }) {
           >
             {rescheduling ? 'Redistributing…' : `Redistribute ${undoneCount} undone task${undoneCount === 1 ? '' : 's'}`}
           </button>
-          {movedAwayCount > 0 && (
-            <button
-              onClick={undoReschedule}
-              disabled={rescheduling}
-              className="mt-2 w-full border border-ink/30 text-muted px-4 py-2 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-ink hover:text-ink transition-colors"
-            >
-              {rescheduling ? 'Restoring…' : `↩ Restore ${movedAwayCount} task${movedAwayCount === 1 ? '' : 's'} moved from today`}
-            </button>
-          )}
+          <button
+            onClick={undoReschedule}
+            disabled={rescheduling || movedAwayCount === 0}
+            className="mt-2 w-full border border-ink/20 px-4 py-2 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-ink transition-colors"
+          >
+            {rescheduling ? 'Restoring…' : movedAwayCount > 0 ? `↩ Restore ${movedAwayCount} task${movedAwayCount === 1 ? '' : 's'} moved from today` : '↩ Nothing moved from today'}
+          </button>
           {rescheduleResult && (
             <div className="mt-3 text-xs font-mono text-accent">{rescheduleResult}</div>
           )}
