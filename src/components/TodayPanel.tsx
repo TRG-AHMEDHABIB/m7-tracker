@@ -92,7 +92,7 @@ export default function TodayPanel({ currentDate, setCurrentDate }: { currentDat
   }
 
   const totalMin = tasks.reduce((s, t) => s + t.minutes, 0);
-  const doneMin = tasks.filter(t => t.done).reduce((s, t) => s + t.minutes, 0);
+  const doneMin = tasks.filter(t => t.done).reduce((s, t) => s + (t.actual_minutes ?? t.minutes), 0);
   const pct = totalMin ? Math.round((doneMin / totalMin) * 100) : 0;
   const undoneCount = tasks.filter(t => !t.done).length;
 
@@ -164,10 +164,9 @@ export default function TodayPanel({ currentDate, setCurrentDate }: { currentDat
                     </div>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted font-mono flex-wrap">
                       <span className="border border-ink/20 px-2 py-0.5 uppercase">{t.task_type}</span>
-                      <span>{t.minutes} min</span>
-                      {t.done && (
-                        <ActualTimeField task={t} onSave={(mins) => updateActualMin(t, mins)} />
-                      )}
+                      <span>{t.minutes} min planned</span>
+                      <ActualTimeField task={t} onSave={(mins) => updateActualMin(t, mins)} />
+
                       {!t.done && <MoveTaskButton onMove={(days) => moveTask(t, days)} />}
                     </div>
                   </div>
