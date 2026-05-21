@@ -9,49 +9,53 @@ interface ExportTable {
   description: string;
   table: string;
   order?: string;
+  columns: string[];   // explicit allowlist for CSV (export + upload)
 }
 
 const TABLES: ExportTable[] = [
   {
     id: 'tasks',
     label: 'Daily Plan',
-    description: 'All 372 tasks — dates, done state, reschedule history, actual minutes.',
+    description: 'Tasks — date, week, name, planned/actual minutes, done.',
     table: 'tasks',
     order: 'task_date,sort_order',
+    columns: ['task_date','week_label','day_label','task_text','task_type','minutes','actual_minutes','done'],
   },
   {
     id: 'error_log',
     label: 'Error Log',
-    description: 'Every mistake logged — section, topic, what went wrong, fix.',
+    description: 'Mistakes — date, section, type, source, why, fix.',
     table: 'error_log',
-    order: 'logged_at',
+    order: 'question_date',
+    columns: ['question_date','section','question_type','source','source_ref','topic','difficulty','error_type','time_status','what_i_did_wrong','fix_lesson','reattempted','reattempt_correct'],
   },
   {
     id: 'practice_tests',
     label: 'Practice Tests',
-    description: 'Test dates, verbal/quant scores, weaknesses, notes.',
+    description: 'Test scores — date, V/Q/total, weaknesses, notes.',
     table: 'practice_tests',
     order: 'test_label',
+    columns: ['test_label','scheduled_date_label','taken_date','source','verbal_score','quant_score','top_weaknesses','notes'],
   },
   {
     id: 'quant_topics',
     label: 'Quant Topics',
-    description: '60 topics — studied / drilled / mastered state + notes.',
+    description: 'Topics — category, name, studied/drilled/mastered.',
     table: 'quant_topics',
     order: 'sort_order',
+    columns: ['category','topic','studied','drilled','mastered','notes'],
   },
   {
     id: 'weekly_goals',
     label: 'Weekly Goals',
-    description: 'Per-week targets, hours, reflections.',
+    description: 'Per-week targets, dates, reflection.',
     table: 'weekly_goals',
     order: 'week_label',
+    columns: ['week_label','dates_label','focus','phase','hours_target','quant_q_target','verbal_q_target','vocab_target','reflection'],
   },
 ];
 
-function toCSV(rows: Record<string, unknown>[]): string {
-  if (!rows.length) return '';
-  const headers = Object.keys(rows[0]);
+function toCSV(rows: Record<string, unknown>[], headers: string[]): string {
   const escape = (v: unknown) => {
     const s = v == null ? '' : String(v);
     return s.includes(',') || s.includes('"') || s.includes('\n')
@@ -131,17 +135,32 @@ export default function ExportPanel() {
       const rows = parseCSV(text);
       if (rows.length === 0) { setError('CSV is empty'); setBusy(null); return; }
 
-      // Coerce blank strings → null, parse booleans/numbers loosely
+      // Coerce blanks → null, parse booleans, only keep allowlisted columns
+      const allowed = new Set(t.columns);
       const clean = rows.map(r => {
         const out: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(r)) {
+          if (!allowed.has(k)) continue;
           if (v === '' || v == null) { out[k] = null; continue; }
-          if (v === 'true') out[k] = true;
-          else if (v === 'false') out[k] = false;
+          const lower = String(v).toLowerCase().trim();
+          if (lower === 'true') out[k] = true;
+          else if (lower === 'false') out[k] = false;
           else out[k] = v;
         }
         return out;
       });
+
+      // Auto-assign sort_order for tables that need it (excluded from CSV)
+      if (t.table === 'tasks') {
+        const counterByDate: Record<string, number> = {};
+        for (const row of clean) {
+          const d = String(row.task_date ?? '');
+          counterByDate[d] = (counterByDate[d] ?? 0) + 1;
+          row.sort_order = counterByDate[d];
+        }
+      } else if (t.table === 'quant_topics') {
+        clean.forEach((row, i) => { row.sort_order = i + 1; });
+      }
 
       const { error: delErr } = await supabase.from(t.table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (delErr && !delErr.message.includes('id')) {
@@ -164,7 +183,7 @@ export default function ExportPanel() {
   async function exportTable(t: ExportTable) {
     setBusy(t.id);
     setError(null);
-    let query = supabase.from(t.table).select('*');
+    let query = supabase.from(t.table).select(t.columns.join(','));
     if (t.order) {
       for (const col of t.order.split(',')) query = query.order(col);
     }
@@ -172,7 +191,7 @@ export default function ExportPanel() {
     setBusy(null);
     if (err || !data) { setError(err?.message ?? 'Unknown error'); return; }
     const date = new Date().toISOString().slice(0, 10);
-    download(`m7-${t.table}-${date}.csv`, toCSV(data as Record<string, unknown>[]));
+    download(`m7-${t.table}-${date}.csv`, toCSV(data as unknown as Record<string, unknown>[], t.columns));
     setDone(t.id);
     setTimeout(() => setDone(null), 2500);
   }
@@ -181,15 +200,14 @@ export default function ExportPanel() {
     setBusy('all');
     setError(null);
     for (const t of TABLES) {
-      let query = supabase.from(t.table).select('*');
+      let query = supabase.from(t.table).select(t.columns.join(','));
       if (t.order) {
         for (const col of t.order.split(',')) query = query.order(col);
       }
       const { data, error: err } = await query;
       if (err || !data) { setError(`${t.table}: ${err?.message}`); setBusy(null); return; }
       const date = new Date().toISOString().slice(0, 10);
-      download(`m7-${t.table}-${date}.csv`, toCSV(data as Record<string, unknown>[]));
-      // slight delay so browser doesn't block multiple downloads
+      download(`m7-${t.table}-${date}.csv`, toCSV(data as unknown as Record<string, unknown>[], t.columns));
       await new Promise(r => setTimeout(r, 300));
     }
     setBusy(null);
