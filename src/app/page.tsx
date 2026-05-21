@@ -6,10 +6,11 @@ import TodayPanel from '@/components/TodayPanel';
 import ErrorLogPanel from '@/components/ErrorLogPanel';
 import ProgressPanel from '@/components/ProgressPanel';
 import PlanPanel from '@/components/PlanPanel';
+import CalendarPanel from '@/components/CalendarPanel';
 
 const TEST_DATE = new Date('2026-08-22');
 
-type Tab = 'today' | 'errors' | 'progress' | 'plan';
+type Tab = 'today' | 'calendar' | 'errors' | 'progress' | 'plan';
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>('today');
@@ -24,6 +25,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {tab === 'today' && <TodayPanel currentDate={today} />}
+        {tab === 'calendar' && <CalendarPanel currentDate={today} setCurrentDate={setToday} />}
         {tab === 'errors' && <ErrorLogPanel />}
         {tab === 'progress' && <ProgressPanel />}
         {tab === 'plan' && <PlanPanel />}
@@ -52,7 +54,7 @@ function Header({
         </div>
 
         <nav className="flex items-center gap-1">
-          {(['today','errors','progress','plan'] as Tab[]).map(t => (
+          {(['today','calendar','errors','progress','plan'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -62,7 +64,7 @@ function Header({
                   : 'border-ink/15 hover:border-ink/40'
               }`}
             >
-              {t === 'today' ? 'Today' : t === 'errors' ? 'Error Log' : t === 'progress' ? 'Progress' : 'Plan I/O'}
+              {t === 'today' ? 'Today' : t === 'calendar' ? 'Calendar' : t === 'errors' ? 'Error Log' : t === 'progress' ? 'Progress' : 'Plan I/O'}
             </button>
           ))}
         </nav>
