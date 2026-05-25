@@ -1,17 +1,17 @@
-# Operation M7 — GRE Prep Tracker
+# Operation M7 —  Prep Tracker
 
 **13-week plan · May 25 → Aug 22, 2026 · Target 328 (baseline 296)**
 
 A Next.js + Supabase app that replaces your spreadsheet with a writeback-enabled
 dashboard. Pre-seeded with all 372 tasks across 90 days from the original
-Gregmat-calibrated plan. **No pre-built rest days** — the plan is what it is.
+gmat-calibrated plan. **No pre-built rest days** — the plan is what it is.
 Take rest opportunistically using the app's flex buttons when you actually
 need it.
 
 ## What's inside
 
 ```
-m7-gre-tracker/
+m7--tracker/
 ├── supabase/
 │   ├── 01_schema.sql      ← tables, views, 4 SQL functions
 │   └── 02_seed.sql        ← 372 tasks (rest days baked in), 13 weeks, 8 tests, 60 topics
@@ -20,7 +20,7 @@ m7-gre-tracker/
 │   ├── components/
 │   │   ├── TodayPanel.tsx       ← daily checklist + missed-day + busy-day buttons
 │   │   ├── ErrorLogPanel.tsx    ← full error log w/ filters + reattempt + CSV export
-│   │   ├── ProgressPanel.tsx    ← pivot charts + weekly rollup
+│   │   ├── ProssPanel.tsx    ← pivot charts + weekly rollup
 │   │   └── PlanPanel.tsx        ← JSON export/import for GPT roundtrip
 │   └── lib/supabase.ts
 ├── docs/
@@ -40,7 +40,7 @@ Daily checklist. Two flex buttons on the sidebar:
 ### Error Log
 Full rigorous logging: section, question type, source, source-ref, topic, difficulty, what-went-wrong, fix, tags, time-spent. Auto-flags repeat patterns (same section + type + topic ≥2 times). One-click re-attempt tracking. CSV export for Google Sheets.
 
-### Progress
+### Pross
 Three pivot charts wired to SQL views:
 - Errors by question type (your weak-spot ranking)
 - Errors by source × section (which book/test is breaking you)
@@ -61,7 +61,7 @@ Full guide with screenshots: `docs/DEPLOY.md`.
 
 ## Anki
 
-Use the **Gregmat AnkiWeb deck `962516846`** (~868 words, free). Your tracker is calibrated for it. Install steps + pacing in `docs/ANKI.md`.
+Use the **gmat AnkiWeb deck `962516846`** (~868 words, free). Your tracker is calibrated for it. Install steps + pacing in `docs/ANKI.md`.
 
 ## Tech notes
 
